@@ -1,0 +1,86 @@
+/* use database spj 
+    relation s describes suppliers
+       sno = supplier number, sname = supplier name, status = status level of supplier, 
+       city = location of supplier, phone = phone number, site = web site url
+    relation p describes parts supplied by suppliers
+       pno = part number, pname = part name, color = color of part, weight = weight in pounds, city = location of part 
+    relations j describes projects
+       jno = project number, jname = project name, city = project location 
+    relation spj describes shipments of parts by suppliers for a particular project */
+
+
+/* Q1  get names of projects supplied by s1
+ * Example:  ipad is the name of project j1 which is supplied by s1  */
+/* first with subqueries */
+select Jname from j
+where jno in (
+select jno from spj where sno ="S1");
+
+/* Q2 and again using joins */
+select Jname
+from j join spj on spj.jno = j.jno
+where spj.sno = "S1";
+
+/* Q3  get sno for suppliers who supply j1 and j2 
+ * The result should include S2 which supplies parts for all
+ * projects; but not s1 as it supplies parts for j1 but not j2 */
+/* first with subqueries */
+select sno from spj where jno = "J1" and sno in (select sno from spj where jno = "J2");
+
+/* Q4 now with joins */  
+select distinct a.sno
+from spj as a join spj as b on a.sno=b.sno
+where a.jno="J1" and b.jno="J2";
+
+/* Q5 Get pno values for parts supplied to any project by a supplier in the same city */
+/* lets read this as p.city = s.city, other readings also ok 
+ * Read this as p.city = s.city, other readings also ok
+ *   Example:  Part P1 is located in London, is supplied by Supplier S1 who is
+ *   also located in London */
+/* first with joins */
+select distinct p.pno
+from s join p join spj on s.sno = spj.sno and p.pno = spj.pno
+where s.city = p.city;
+
+/* Q6  now with subqueries */ 
+select pno from p 
+where pno in (
+select pno from spj
+where sno in (
+select sno from s
+where s.city = p.city)); 
+
+/* Q7 Get jno values for projects supplied by at least one supplier not in the same city */
+/* read as j.city not equal to at least one s.city where sno supplies jno 
+ * Example: Project J1 is in Paris, is supplied by supplier S1 located in London, which is not same as Paris */
+/* with joins */
+select distinct spj.jno
+from s join spj join j on s.sno=spj.sno and spj.jno=j.jno
+where j.city != s.city;
+
+/* Q8 same with subqueries */
+select jno from j
+where jno in (
+select jno from spj
+where sno in (
+select sno from s
+where j.city!=s.city));
+
+/* Q9 Get sno values for suppliers supplying at least one part supplied */
+/* by at least one supplier who supplies a red part 
+ * Example: S5 supplies P3 which is also supplied by S3, S3 has supplied P4 which is red */
+/* with subqueries */
+select distinct spj.SNO from spj 
+where spj.PNO in 
+(select spj.PNO from spj
+where spj.SNO in
+(select spj.SNO from spj
+where spj.PNO in
+(select p.PNO from p
+where p.Color = "RED")));
+
+/* Q10. Get all pairs of city values such that a supplier in the first city
+supplies a project in the second city
+ Example LONDON Paris:  Supplier S1 in LONDON supplies a part for project J1 located in Paris */
+select distinct s.city suppliercity, j.city projectcity from
+s join spj join j on s.sno=spj.sno and spj.jno=j.jno;
