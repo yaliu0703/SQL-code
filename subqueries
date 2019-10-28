@@ -1,0 +1,45 @@
+/* find project name and average shipment for the project */
+/* Using joins */
+select jname, round(avg(qty),1) avg_qty
+from j join spj on j.jno = spj.jno
+group by jname;
+
+/* now using subqueries*/
+select jname, avg_qty from 
+(select jno, round(avg(qty),1) avg_qty from spj group by jno) as sub join j on sub.jno = j.jno;
+
+/* find the average total shipments of parts for projects
+read as: find average ( sum of qty for each project ) 
+thsi is called two part aggregation because the first aggregation is a sum 
+and the second an average */
+select avg(tq)
+from (select sum(qty) as tq from spj group by jno) mysub;
+
+/* find the names of all projects with supplied by supplier s1 */
+select jname from j
+where jno in (select jno from spj where sno = 'S1');
+
+/* Get pno values for parts supplied to any project by a supplier in the same city */
+/* lets read this as p.city = s.city, other readings also ok */
+select pno from p
+where city in /* (select city from project supplied by pno) */
+(select city from s
+where sno in /* (jno supplied by p.pno) */
+(select sno from spj where pno = p.pno)); 
+
+/* find the part number of parts that have the largest quantity shipped by any supplier for all projects */
+select pno from spj
+where qty >= all (select qty from spj);
+
+/* alterntively */
+select pno from spj
+where qty = (select max(qty) from spj);
+
+/* Find the name of blue parts that have a weight greater than some red part */
+select pname from p where color = 'BLUE'
+and weight > any (select weight from p where color='RED');
+
+/* find the pno and the average qty shipped of red parts */
+select pno, avg(qty) from spj
+group by pno
+having pno in (select pno from p where color='RED');
