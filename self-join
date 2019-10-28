@@ -1,0 +1,47 @@
+/* This dataset was collected by the GroupLens Research Project at the University of Minnesota.
+This data set consists of:
+• 100,000 ratings (1-5) from 943 users on 1681 movies.
+• Each user has rated at least 20 movies.
+• Simple demographic info for the users (age, gender, occupation, zip)
+We will use an extract of data stored in four tables
+• m: MovieID, Title, Movie Date, and 19 binary variables indicating movie category: Unknown,
+Action, Adventure, Animation, Childrens, Comedy, Crime, Documentary, Drama, Fantasy,
+Filmnoir, Horror, Musical, Mystery, Romance, Scifi, Thriller, War, Western.
+• u: UserID, Age, Gender, Occupation, Zip
+• r: User ID, Movie ID, Rating ( 1 to 5), Timestamp (seconds from some epoch)
+• unames: first_name, last_name, and email of each of the users  */
+
+
+show databases;
+use MovieLens;
+
+/* find the movies with above average length (minutes) */
+/* first using subqueries, easier: */
+select title from m
+where minutes > (select avg(minutes) from m);
+
+/* now using joins */
+select count(*) from m;  /* 11 rows */
+
+/* the cartesian product
+  from m as a, m as b (no join clause)
+  The 'a' part of each group is a row of a repeated 11 times
+  The 'b' part of each group has all the rows of m
+  total of 121 rows
+  */
+select a.movieid, a.minutes, b.movieid, b.minutes
+from m as a, m as b
+order by a.movieid, b.movieid;
+
+/* group by a.movieid
+  what do these groups look like? 
+  The 'a' part of each group is a row of a repeated 11 times
+  The 'b' part of each group has all the rows of m
+  So if we take avg(a.minutes) we will get the a.minutes for the group since they 
+  are all identical.  (we could also have used min, max, all giving the same result
+  And, if we take avg(b.minutes), we will get the average of all movies
+  */
+select a.title  
+from m as a, m as b
+group by a.title, a.movieid
+having avg(a.minutes) > avg(b.minutes);
